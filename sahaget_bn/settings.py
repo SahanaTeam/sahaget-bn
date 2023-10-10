@@ -26,6 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.str("SECRET_KEY")
+SIGNING_KEY = env.str("SIGNING_KEY")
 
 # reCAPTCHA settings
 # RECAPTCHA_PUBLIC_KEY = env.str("RECAPTCHA_PUBLIC_KEY")
@@ -52,7 +53,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "rest_framework.authtoken",
-    "dj_rest_auth",
     # local_apps
     "accounts.apps.AccountsConfig",
 ]
@@ -177,20 +177,9 @@ SPECTACULAR_SETTINGS = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
-    "SLIDING_TOKEN_LIFETIME": timedelta(days=1),
-    "SLIDING_TOKEN_REFRESH_LIFETIME_GRACE_PERIOD": timedelta(minutes=60),
-    "SLIDING_TOKEN_LIFETIME_GRACE_PERIOD": timedelta(minutes=60),
-    "SLIDING_TOKEN_REFRESH_EASIER": True,
-    "SLIDING_TOKEN_REFRESHES": False,
-    "ROTATE_REFRESH_TOKENS": False,
-    "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
-    "VERIFYING_KEY": None,
+    "SIGNING_KEY": SIGNING_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "user_id",
-    "USER_ID_CLAIM": "user_id",
-    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
 }
 
 AUTHENTICATION_BACKENDS = (
