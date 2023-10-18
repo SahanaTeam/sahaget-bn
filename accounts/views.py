@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, serializers
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CustomUserSerializer, UserLoginSerializer, UserRoleSerializers
@@ -77,14 +77,42 @@ class CreateUserRoleAPIView(generics.CreateAPIView):
     description="User Sign-In (Login) Endpoint",
     tags=["Users"],
 )
-class UserLoginAPIView(generics.CreateAPIView):
+class UserLoginAPIView(APIView):
     serializer_class = UserLoginSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except serializers.ValidationError as e:
+            username_error = e.detail.get("username")
+            password_error = e.detail.get("password")
+
+            if username_error:
+                return Response(
+                    {"error": "Username may not be blank."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if password_error:
+                return Response(
+                    {"error": "Password may not be blank."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        user = authenticate(
+            request,
+            username=serializer.validated_data["username"],
+            password=serializer.validated_data["password"],
+        )
+        if user:
+            refresh = RefreshToken.for_user(user)
+            data = {
+                "access_token": str(refresh.access_token),
+                # "user": CustomUserSerializer(user).data,
+            }
+            return Response(data, status=status.HTTP_200_OK)
         else:
             return Response(
-                {"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
             )
