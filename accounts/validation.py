@@ -64,7 +64,7 @@ def validate_password_field(password, confirm_password):
     character_pattern = r"^(?=.*[A-Z])(?=.*[a-z]).+$"
     if not regex.search(character_pattern, password):
         return Response(
-            {"error": "Password must contain at least one small or capital letter."},
+            {"error": "Password must contain at least one small and capital letter."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
