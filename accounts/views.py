@@ -3,9 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CustomUserSerializer, UserLoginSerializer, UserRoleSerializers
 from .validation import (
+    validate_password_field,
     validate_user_registration_data,
     is_email_already_registered,
     is_username_already_taken,
+    validate_username_field,
 )
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
@@ -100,10 +102,26 @@ class UserLoginAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        username = serializer.validated_data["username"]
+        password = serializer.validated_data["password"]
+
+        # Validate user inputs
+        if validate_username_field(username):
+            return Response(
+                {"error": "Your login attempt was unsuccessful. Please try again."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        if validate_password_field(password, password):
+            return Response(
+                {"error": "Your login attempt was unsuccessful. Please try again."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
         user = authenticate(
             request,
-            username=serializer.validated_data["username"],
-            password=serializer.validated_data["password"],
+            username=username,
+            password=password,
         )
         if user:
             refresh = RefreshToken.for_user(user)
