@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from .models import Role
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -26,3 +25,4 @@ class UserRoleSerializers(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
+

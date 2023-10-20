@@ -8,6 +8,7 @@ from .validation import (
     is_email_already_registered,
     is_username_already_taken,
     validate_username_field,
+
 )
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema

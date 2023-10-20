@@ -2,8 +2,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.contrib.auth import password_validation
 from django.contrib.auth import get_user_model
-import re
+import re as regex
 
 
 def validate_email_field(email):
@@ -60,7 +61,21 @@ def validate_password_field(password, confirm_password):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if not re.search(r"[!@#$%^&*()_+]", password):
+    character_pattern = r"^(?=.*[A-Z])(?=.*[a-z]).+$"
+    if not regex.search(character_pattern, password):
+        return Response(
+            {"error": "Password must contain at least one small and capital letter."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    number_pattern = r".*\d+.*"
+    if not regex.search(number_pattern, password):
+        return Response(
+            {"error": "Password must contain at least one numerical value."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not regex.search(r"[!@#$%^&*()_+]", password):
         return Response(
             {"error": "Password must contain at least one special character."},
             status=status.HTTP_400_BAD_REQUEST,
