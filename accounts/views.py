@@ -1,14 +1,22 @@
-from rest_framework import generics
+from rest_framework import generics, serializers
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import CustomUserSerializer, UserRoleSerializers
+from .serializers import CustomUserSerializer, UserLoginSerializer, UserRoleSerializers
 from .validation import (
+    validate_password_field,
     validate_user_registration_data,
     is_email_already_registered,
     is_username_already_taken,
+    validate_username_field,
+
 )
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
+from rest_framework.views import APIView
+from django.contrib.auth import authenticate, login
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 @extend_schema(
@@ -66,3 +74,64 @@ class CreateUserRoleAPIView(generics.CreateAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    description="User Sign-In (Login) Endpoint",
+    tags=["Users"],
+)
+class UserLoginAPIView(APIView):
+    serializer_class = UserLoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except serializers.ValidationError as e:
+            username_error = e.detail.get("username")
+            password_error = e.detail.get("password")
+
+            if username_error:
+                return Response(
+                    {"error": "Username may not be blank."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if password_error:
+                return Response(
+                    {"error": "Password may not be blank."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        username = serializer.validated_data["username"]
+        password = serializer.validated_data["password"]
+
+        # Validate user inputs
+        if validate_username_field(username):
+            return Response(
+                {"error": "Your login attempt was unsuccessful. Please try again."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        if validate_password_field(password, password):
+            return Response(
+                {"error": "Your login attempt was unsuccessful. Please try again."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        user = authenticate(
+            request,
+            username=username,
+            password=password,
+        )
+        if user:
+            refresh = RefreshToken.for_user(user)
+            data = {
+                "access_token": str(refresh.access_token),
+                # "user": CustomUserSerializer(user).data,
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+            )
